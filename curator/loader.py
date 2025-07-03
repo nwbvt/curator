@@ -1,8 +1,9 @@
 import hashlib
 from logging import log
 import os
-import curator.db as db
 from sqlalchemy import select
+
+from curator.data_model import Image, ImageLocation, db_session
 
 def image_files(dir: str) -> list:
     """
@@ -23,16 +24,12 @@ def image_files(dir: str) -> list:
         images.extend(image_files(sub_dir))
     return images
 
-def load_images(config: dict) -> list:
+def load_images() -> list:
     """
     Loads images from the configured import locations and adds them to the database.
-    
-    Args:
-        config (dict): Configuration
-        
     """
-    with db.connect(config) as session:
-        import_locations = session.execute(select(db.ImportLocation)).scalars()
+    with db_session() as session:
+        import_locations = session.execute(select(ImageLocation)).all()
         for location in import_locations:
             images = image_files(location.directory)
             for image in images:
@@ -40,7 +37,7 @@ def load_images(config: dict) -> list:
                     bytes = f.read()
                     hash = hashlib.md5(bytes).hexdigest()
                 format = os.path.splitext(image)[1][1:]
-                image = db.Image(
+                image = Image(
                     location=image,
                     hash=hash,
                     format=format

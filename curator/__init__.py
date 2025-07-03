@@ -1,0 +1,1 @@
+from curator.data_model import *
