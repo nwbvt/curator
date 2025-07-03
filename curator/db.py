@@ -12,6 +12,13 @@ class Image(Base):
     location: Mapped[str] = mapped_column(String())
     hash: Mapped[str] = mapped_column(String(32))
     description: Mapped[Optional[str]] = mapped_column(String(256))
+    format: Mapped[str] = mapped_column(String(4))
+
+class ImportLocation(Base):
+    __tablename__ = "import_location"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    directory: Mapped[str] = mapped_column(String())
 
 def connect(config: dict) -> None:
     """Connect to the database."""
