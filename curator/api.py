@@ -1,8 +1,9 @@
+import asyncio
 from typing import Annotated
-from fastapi import Depends, FastAPI
-from sqlalchemy import select
-from sqlmodel import Session
-from curator.data_model import ImageLocation, create_db_and_tables, db_session
+from fastapi import Body, Depends, FastAPI
+from sqlmodel import Session, select
+from curator import loader
+from curator.data_model import Image, ImageLocation, create_db_and_tables, db_session
 
 SessionDep = Annotated[Session, Depends(db_session)]
 
@@ -25,3 +26,29 @@ async def get_locations(session: SessionDep) -> list[ImageLocation]:
     """
     locations = session.exec(select(ImageLocation)).all()
     return locations
+
+@app.post("/locations")
+async def add_location(directory: Annotated[str, Body(embed=True)],
+                       session: SessionDep) -> ImageLocation:
+    """
+    Adds a new import location to the database.
+    
+    Args:
+        location (ImageLocation): The import location to add.
+    """
+    location = ImageLocation(directory=directory)
+    session.add(location)
+    session.commit()
+    session.refresh(location)
+    return location
+
+@app.get("/images")
+async def get_images(session: SessionDep) -> list[Image]:
+    """
+    Retrieves all images from the database.
+    
+    Returns:
+        list: A list of images.
+    """
+    images = session.exec(select(Image)).all()
+    return images       

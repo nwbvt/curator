@@ -1,4 +1,6 @@
-from sqlalchemy import create_engine
+from contextlib import contextmanager
+from typing import Iterable
+from sqlalchemy import Engine, create_engine
 from sqlmodel import Field, Session, SQLModel
 from curator.config import settings
 
@@ -15,9 +17,9 @@ class ImageLocation(SQLModel, table=True):
     """Model representing an import location for images."""
     
     id: int | None = Field(default=None, primary_key=True)
-    directory: str
+    directory: str = Field(unique=True)
 
-def db_engine():
+def db_engine() -> Engine:
     """Create and return a database engine."""
     return create_engine(settings.db_url, echo=True)
 
@@ -25,8 +27,7 @@ def create_db_and_tables():
     """Create the database and tables if they do not exist."""
     SQLModel.metadata.create_all(db_engine())
 
-def db_session():
+def db_session() -> Iterable[Session]:
     """Create a new database session."""
     engine = db_engine()
-    with Session(engine) as session:
-        yield session
+    return Session(engine)
