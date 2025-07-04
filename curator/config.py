@@ -1,15 +1,19 @@
-import yaml
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-def load_config(file_path: str) -> dict:
+class Settings(BaseSettings):
     """
-    Load configuration from a YAML file.
-
-    Args:
-        file_path (str): The path to the YAML configuration file.
-
-    Returns:
-        dict: The loaded configuration as a dictionary.
+    Configuration settings for the Curator application.
     """
-    with open(file_path, 'r') as file:
-        config = yaml.safe_load(file)
-    return config
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_file_encoding='utf-8',
+        extra='ignore'
+    )
+
+    # Database settings
+    db_url: str = 'sqlite:///./curator.db'
+
+    # Logging settings
+    log_level: str = 'INFO'
+
+settings = Settings()
