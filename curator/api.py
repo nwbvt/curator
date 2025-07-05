@@ -1,8 +1,7 @@
 import asyncio
 from typing import Annotated
-from fastapi import Body, Depends, FastAPI
+from fastapi import Body, Depends, FastAPI, HTTPException
 from sqlmodel import Session, select
-from curator import loader
 from curator.data_model import Image, ImageLocation, create_db_and_tables, db_session
 
 SessionDep = Annotated[Session, Depends(db_session)]
@@ -37,10 +36,42 @@ async def add_location(directory: Annotated[str, Body(embed=True)],
         location (ImageLocation): The import location to add.
     """
     location = ImageLocation(directory=directory)
+    if session.get(ImageLocation, location.directory):
+        raise HTTPException(status_code=400, detail=f"Location '{directory}' already exists.")
     session.add(location)
     session.commit()
     session.refresh(location)
     return location
+
+@app.get("/locations/{location_id}")
+async def get_location(location_id: int, session: SessionDep) -> ImageLocation:
+    """
+    Retrieves a specific import location by its ID.
+    
+    Args:
+        location_id (int): The ID of the import location.
+    
+    Returns:
+        ImageLocation: The requested import location.
+    """
+    location = session.get(ImageLocation, location_id)
+    if not location:
+        raise HTTPException(status_code=404, detail=f"Location with ID {location_id} not found.")
+    return location
+
+@app.delete("/locations/{location_id}")
+async def delete_location(location_id: int, session: SessionDep) -> None:
+    """
+    Deletes a specific import location by its ID.
+    
+    Args:
+        location_id (int): The ID of the import location to delete.
+    """
+    location = session.get(ImageLocation, location_id)
+    if not location:
+        raise HTTPException(status_code=404, detail=f"Location with ID {location_id} not found.")
+    session.delete(location)
+    session.commit()
 
 @app.get("/images")
 async def get_images(session: SessionDep) -> list[Image]:
