@@ -8,7 +8,7 @@ class Image(SQLModel, table=True):
     """Model representing an image."""
     
     id: int | None = Field(default=None, primary_key=True)
-    location: str
+    location: str = Field(unique=True)
     hash: str = Field(index=True, max_length=31)
     description: str | None = None
     format: str = Field(max_length=3)
@@ -21,7 +21,7 @@ class ImageLocation(SQLModel, table=True):
 
 def db_engine() -> Engine:
     """Create and return a database engine."""
-    return create_engine(settings.db_url, echo=True)
+    return create_engine(settings.db_url, echo=settings.db_echo)
 
 def create_db_and_tables():
     """Create the database and tables if they do not exist."""

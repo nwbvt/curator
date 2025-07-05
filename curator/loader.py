@@ -1,5 +1,5 @@
 import hashlib
-from logging import log
+import logging as log
 import os
 from sqlmodel import Session, select
 
@@ -32,18 +32,27 @@ def load_images():
     """
     with db_session() as session:
         import_locations = session.exec(select(ImageLocation)).all()
-        for location in import_locations:
-            print(location)
-            images = image_files(location.directory)
-            for image in images:
-                with open(image, 'rb') as f:
-                    bytes = f.read()
-                    hash = hashlib.md5(bytes).hexdigest()
-                format = os.path.splitext(image)[1][1:]
-                image = Image(
-                    location=image,
-                    hash=hash,
-                    format=format
-                )
-                session.add(image)
+    for location in import_locations:
+        print(location)
+        load_from_directory(location)
+
+def load_from_directory(location):
+    log.info("Loading images from %s", location.directory)
+    images = image_files(location.directory)
+    log.info("Found %d images in %s", len(images), location.directory)
+    added=0
+    with db_session() as session:
+        for image in images:
+            with open(image, 'rb') as f:
+                bytes = f.read()
+                hash = hashlib.md5(bytes).hexdigest()
+            format = os.path.splitext(image)[1][1:]
+            image = Image(
+                        location=image,
+                        hash=hash,
+                        format=format
+                    )
+            session.add(image)
+            added+=1
         session.commit()
+    log.info("Added %d images to the database from %s", added, location.directory)
