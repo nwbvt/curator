@@ -1,11 +1,10 @@
 import logging as log
 from typing import Annotated
 from fastapi import BackgroundTasks, Body, Depends, FastAPI, HTTPException
-from sqlmodel import Session, select
-from curator.imageLocation import ImageLocation
-from curator.image import Image
+from sqlmodel import Session
+from curator.imageLocation import ImageLocation, ImageLocationNotFound, LocationExists, create_image_location, delete_image_location, get_image_location, list_locations
+from curator.image import Image, list_images
 from curator.db import create_db_and_tables, db_session
-from curator.imageLocation import load_from_directory
 
 SessionDep = Annotated[Session, Depends(db_session)]
 
@@ -27,7 +26,7 @@ async def get_locations(session: SessionDep) -> list[ImageLocation]:
     Returns:
         list: A list of import locations.
     """
-    locations = session.exec(select(ImageLocation)).all()
+    locations = list_locations(session)
     return locations
 
 @app.post("/locations")
@@ -40,15 +39,12 @@ async def add_location(directory: Annotated[str, Body(embed=True)],
     Args:
         location (ImageLocation): The import location to add.
     """
-    location = ImageLocation(directory=directory)
-    if session.exec(select(ImageLocation).where(ImageLocation.directory == directory)).first():
-        raise HTTPException(status_code=400, detail=f"Location '{directory}' already exists.")
-    session.add(location)
-    session.commit()
-    session.refresh(location)
-    log.info("Added new import location: %s", location.directory)
-    tasks.add_task(load_from_directory, location=location)
-    return location
+    try:
+        location = create_image_location(directory, session, tasks)
+        return location
+    except LocationExists as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 
 @app.get("/locations/{location_id}")
 async def get_location(location_id: int, session: SessionDep) -> ImageLocation:
@@ -61,7 +57,7 @@ async def get_location(location_id: int, session: SessionDep) -> ImageLocation:
     Returns:
         ImageLocation: The requested import location.
     """
-    location = session.get(ImageLocation, location_id)
+    location = get_image_location(location_id, session)
     if not location:
         raise HTTPException(status_code=404, detail=f"Location with ID {location_id} not found.")
     return location
@@ -74,11 +70,10 @@ async def delete_location(location_id: int, session: SessionDep) -> None:
     Args:
         location_id (int): The ID of the import location to delete.
     """
-    location = session.get(ImageLocation, location_id)
-    if not location:
-        raise HTTPException(status_code=404, detail=f"Location with ID {location_id} not found.")
-    session.delete(location)
-    session.commit()
+    try:
+        delete_image_location(location_id, session)
+    except ImageLocationNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 @app.get("/images")
 async def get_images(session: SessionDep, limit: int=10, offset: int=0) -> list[Image]:
@@ -88,5 +83,6 @@ async def get_images(session: SessionDep, limit: int=10, offset: int=0) -> list[
     Returns:
         list: A list of images.
     """
-    images = session.exec(select(Image).limit(limit).offset(offset)).all()
-    return images       
+    images = list_images(session, limit, offset)
+    return images 
+

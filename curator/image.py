@@ -1,6 +1,6 @@
 import hashlib
 import os
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, select
 
 class Image(SQLModel, table=True):
     """Model representing an image."""
@@ -25,3 +25,7 @@ def create_image(image_file):
 
 
 IMAGE_FORMATS = ('.png', '.jpg', '.jpeg', '.gif', '.nef')
+
+def list_images(session, limit, offset):
+    images = session.exec(select(Image).limit(limit).offset(offset)).all()
+    return images

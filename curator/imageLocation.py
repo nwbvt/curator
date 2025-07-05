@@ -1,5 +1,6 @@
 import logging as log
 import os
+from fastapi import HTTPException
 from sqlmodel import Field, SQLModel, select
 
 from curator.db import db_session
@@ -58,3 +59,43 @@ def load_images():
     for location in import_locations:
         print(location)
         load_from_directory(location)
+
+
+def list_locations(session):
+    locations = session.exec(select(ImageLocation)).all()
+    return locations
+
+class LocationExists(Exception):
+    """Exception raised when an import location already exists."""
+    def __init__(self, directory):
+        super().__init__(f"Import location '{directory}' already exists.")
+        self.directory = directory
+
+def create_image_location(directory, session, tasks):
+    location = ImageLocation(directory=directory)
+    if session.exec(select(ImageLocation).where(ImageLocation.directory == directory)).first():
+        raise LocationExists(directory)
+    session.add(location)
+    session.commit()
+    session.refresh(location)
+    log.info("Added new import location: %s", location.directory)
+    tasks.add_task(load_from_directory, location=location)
+    return location
+
+
+def get_image_location(location_id, session):
+    location = session.get(ImageLocation, location_id)
+    return location
+
+class ImageLocationNotFound(Exception):
+    """Exception raised when an image location is not found."""
+    def __init__(self, location_id):
+        super().__init__(f"Image location with ID {location_id} not found.")
+        self.location_id = location_id
+
+def delete_image_location(location_id, session):
+    location = session.get(ImageLocation, location_id)
+    if not location:
+        raise ImageLocationNotFound(location_id)
+    session.delete(location)
+    session.commit()
