@@ -38,20 +38,23 @@ def load_images():
 
 def load_from_directory(location):
     log.info("Loading images from %s", location.directory)
-    images = image_files(location.directory)
-    log.info("Found %d images in %s", len(images), location.directory)
+    files = image_files(location.directory)
+    log.info("Found %d images in %s", len(files), location.directory)
     added=0
     with db_session() as session:
-        for image in images:
-            with open(image, 'rb') as f:
+        for image_file in files:
+            with open(image_file, 'rb') as f:
                 bytes = f.read()
                 hash = hashlib.md5(bytes).hexdigest()
-            format = os.path.splitext(image)[1][1:]
+            format = os.path.splitext(image_file)[1][1:]
             image = Image(
-                        location=image,
+                        location=image_file,
                         hash=hash,
                         format=format
                     )
+            if session.exec(select(Image).where(Image.location == image_file)).first():
+                log.debug("Image %s already exists in the database, skipping", image.location)
+                continue
             session.add(image)
             added+=1
         session.commit()
