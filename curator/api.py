@@ -2,8 +2,10 @@ import logging as log
 from typing import Annotated
 from fastapi import BackgroundTasks, Body, Depends, FastAPI, HTTPException
 from sqlmodel import Session, select
-from curator.data_model import Image, ImageLocation, create_db_and_tables, db_session
-from curator.loader import load_from_directory
+from curator.imageLocation import ImageLocation
+from curator.image import Image
+from curator.db import create_db_and_tables, db_session
+from curator.imageLocation import load_from_directory
 
 SessionDep = Annotated[Session, Depends(db_session)]
 

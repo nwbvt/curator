@@ -1,1 +1,2 @@
-from curator.data_model import *
+from curator.image import Image
+from curator.imageLocation import ImageLocation
