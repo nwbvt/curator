@@ -1,11 +1,10 @@
 import hashlib
 import os
 import exifread
-from sqlmodel import Field, SQLModel, select
+from sqlmodel import Field, SQLModel, Session, UniqueConstraint, select
 
 class Image(SQLModel, table=True):
     """Model representing an image."""
-
     id: int | None = Field(default=None, primary_key=True)
     location: str = Field(unique=True)
     hash: str = Field(index=True, max_length=31)
@@ -23,14 +22,13 @@ class Image(SQLModel, table=True):
 
 class ImageMini(SQLModel):
     """Model representing a minimal image representation for API responses."""
-
     id: int
     location: str
     format: str
 
 class ImageDescription(SQLModel, table=True):
     """Model representing an image description."""
-
+    __table_args__ = (UniqueConstraint('image_id', 'author', name='uq_image_author'),)
     id: int | None = Field(default=None, primary_key=True)
     image_id: int = Field(foreign_key='image.id')
     description: str = Field(max_length=255)
@@ -50,6 +48,9 @@ def exifValue(vals: dict, tag: str, default=None) -> str | float | int | None:
     return default
 
 def create_image(image_file) -> Image:
+    """
+    Creates an Image object from a file, extracting metadata using EXIF.
+    """
     with open(image_file, 'rb') as f:
         bytes = f.read()
         hash = hashlib.md5(bytes).hexdigest()
@@ -73,6 +74,70 @@ def create_image(image_file) -> Image:
 
 IMAGE_FORMATS = ('.png', '.jpg', '.jpeg', '.gif', '.nef')
 
-def list_images(session, limit, offset) -> list[Image]:
+def list_images(session: Session, limit: int, offset: int) -> list[Image]:
+    """"
+    Lists images from the database with pagination.
+    
+    Args:
+        session (Session): The database session.
+        limit (int): The maximum number of images to return.
+        offset (int): The number of images to skip before starting to collect the result set.
+    Returns:
+        list[Image]: A list of Image objects.
+    """
     images = session.exec(select(Image).limit(limit).offset(offset)).all()
     return images
+
+def get_image(image_id: int, session: Session) -> Image | None:
+    """
+    Retrieves an image by its ID.
+    
+    Args:
+        image_id (int): The ID of the image to retrieve.
+        session (Session): The database session.
+    
+    Returns:
+        Image | None: The requested image or None if not found.
+    """
+    return session.get(Image, image_id)
+
+def get_image_descriptions(image_id: int, session: Session) -> list[ImageDescription]:
+    """
+    Retrieves all descriptions for a specific image.
+    
+    Args:
+        image_id (int): The ID of the image.
+        session (Session): The database session.
+    
+    Returns:
+        list[ImageDescription]: A list of ImageDescription objects.
+    """
+    return session.exec(select(ImageDescription).where(ImageDescription.image_id == image_id)).all()
+
+def add_image_description(image_id: int, description: str,
+                          author: str | None, session: Session):
+    """
+    Adds a description to an image.
+    
+    Args:
+        image_id (int): The ID of the image.
+        description (str): The description text.
+        author (str | None): The author of the description.
+        session (Session): The database session.
+    
+    Returns:
+        ImageDescription: The created ImageDescription object.
+    """
+    image_desc = session.exec(
+        select(ImageDescription).where(
+            ImageDescription.image_id == image_id,
+            ImageDescription.author == author
+        )
+    ).first()
+    if image_desc:
+        image_desc.description = description
+    else:
+        image_desc = ImageDescription(image_id=image_id, description=description, author=author)
+    session.add(image_desc)
+    session.commit()
+    return image_desc
