@@ -21,6 +21,13 @@ class Image(SQLModel, table=True):
     iso: int | None = None
     focal_length: float | None = None
 
+class ImageMini(SQLModel):
+    """Model representing a minimal image representation for API responses."""
+
+    id: int
+    location: str
+    format: str
+
 class ImageDescription(SQLModel, table=True):
     """Model representing an image description."""
 
@@ -42,7 +49,7 @@ def exifValue(vals: dict, tag: str, default=None) -> str | float | int | None:
         return v
     return default
 
-def create_image(image_file):
+def create_image(image_file) -> Image:
     with open(image_file, 'rb') as f:
         bytes = f.read()
         hash = hashlib.md5(bytes).hexdigest()
@@ -66,6 +73,6 @@ def create_image(image_file):
 
 IMAGE_FORMATS = ('.png', '.jpg', '.jpeg', '.gif', '.nef')
 
-def list_images(session, limit, offset):
+def list_images(session, limit, offset) -> list[Image]:
     images = session.exec(select(Image).limit(limit).offset(offset)).all()
     return images

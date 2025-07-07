@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import BackgroundTasks, Body, Depends, FastAPI, HTTPException
 from sqlmodel import Session
 from curator.imageLocation import ImageLocation, ImageLocationNotFound, LocationExists, create_image_location, delete_image_location, get_image_location, list_locations
-from curator.image import Image, list_images
+from curator.image import Image, ImageMini, list_images
 from curator.db import create_db_and_tables, db_session
 
 SessionDep = Annotated[Session, Depends(db_session)]
@@ -75,7 +75,7 @@ async def delete_location(location_id: int, session: SessionDep) -> None:
     except ImageLocationNotFound as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-@app.get("/images")
+@app.get("/images", response_model=list[ImageMini])
 async def get_images(session: SessionDep, limit: int=10, offset: int=0) -> list[Image]:
     """
     Retrieves all images from the database.
