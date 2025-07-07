@@ -28,7 +28,7 @@ async def get_locations(session: SessionDep) -> list[imageLocation.ImageLocation
     locations = imageLocation.list_locations(session)
     return locations
 
-@app.post("/locations")
+@app.post("/locations", status_code=201)
 async def add_location(directory: Annotated[str, Body(embed=True)],
                        session: SessionDep,
                        tasks: BackgroundTasks) -> imageLocation.ImageLocation:
@@ -61,7 +61,7 @@ async def get_location(location_id: int, session: SessionDep) -> imageLocation.I
         raise HTTPException(status_code=404, detail=f"Location with ID {location_id} not found.")
     return location
 
-@app.delete("/locations/{location_id}")
+@app.delete("/locations/{location_id}", status_code=204)
 async def delete_location(location_id: int, session: SessionDep) -> None:
     """
     Deletes a specific import location by its ID.
@@ -115,7 +115,22 @@ async def get_image_descriptions(image_id: int, session: SessionDep) -> list[ima
     descriptions = image.get_image_descriptions(image_id, session)
     return descriptions
 
-@app.put("/images/{image_id}/descriptions")
+@app.get("/images/{image_id}/descriptions/{author}")
+async def get_image_description(image_id: int, author: str,
+                                session: SessionDep) -> image.ImageDescription:
+    """Retrieves a specific description for an image by author.
+    Args:
+        image_id (int): The ID of the image.
+        author (str): The author of the description.
+    Returns:
+        ImageDescription: The requested ImageDescription or None if not found.
+    """
+    description = image.get_image_description(image_id, author, session)
+    if not description:
+        raise HTTPException(status_code=404, detail=f"Description for image {image_id} by author '{author}' not found.")
+    return description
+
+@app.put("/images/{image_id}/descriptions/user", status_code=201)
 async def set_image_description(session: SessionDep, image_id: int,
                                 description: str = Body(embed=True)) -> image.ImageDescription:
     """

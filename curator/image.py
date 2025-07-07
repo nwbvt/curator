@@ -1,7 +1,7 @@
 import hashlib
 import os
 import exifread
-from sqlmodel import Field, SQLModel, Session, UniqueConstraint, select
+from sqlmodel import Field, PrimaryKeyConstraint, SQLModel, Session, select
 
 class Image(SQLModel, table=True):
     """Model representing an image."""
@@ -28,8 +28,7 @@ class ImageMini(SQLModel):
 
 class ImageDescription(SQLModel, table=True):
     """Model representing an image description."""
-    __table_args__ = (UniqueConstraint('image_id', 'author', name='uq_image_author'),)
-    id: int | None = Field(default=None, primary_key=True)
+    __table_args__ = (PrimaryKeyConstraint('image_id', 'author', name='uq_image_author'),)
     image_id: int = Field(foreign_key='image.id')
     description: str = Field(max_length=255)
     author: str | None = None
@@ -113,6 +112,25 @@ def get_image_descriptions(image_id: int, session: Session) -> list[ImageDescrip
         list[ImageDescription]: A list of ImageDescription objects.
     """
     return session.exec(select(ImageDescription).where(ImageDescription.image_id == image_id)).all()
+
+def get_image_description(image_id: int, author: str | None, session: Session) -> ImageDescription | None:
+    """
+    Retrieves a specific description for an image by author.
+    
+    Args:
+        image_id (int): The ID of the image.
+        author (str | None): The author of the description.
+        session (Session): The database session.
+    
+    Returns:
+        ImageDescription | None: The requested ImageDescription or None if not found.
+    """
+    return session.exec(
+        select(ImageDescription).where(
+            ImageDescription.image_id == image_id,
+            ImageDescription.author == author
+        )
+    ).first()
 
 def add_image_description(image_id: int, description: str,
                           author: str | None, session: Session):
