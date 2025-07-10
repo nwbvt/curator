@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from sqlmodel import Field, SQLModel, col, select
 
 from curator.db import db_session
-from curator.image import IMAGE_FORMATS, Image, create_image
+from curator.image import IMAGE_FORMATS, ImageData, create_image
 
 class ImageLocation(SQLModel, table=True):
     """Model representing an import location for images."""
@@ -27,7 +27,7 @@ def image_files(d: str, existing: set[str] | None=None) -> list[str]:
         raise ValueError(f"The directory {d} does not exist.")
     if existing is None:
         with db_session() as session:
-            existing = set(session.exec(select(Image.location).where(col(Image.location).startswith(d))).all())
+            existing = set(session.exec(select(ImageData.location).where(col(ImageData.location).startswith(d))).all())
     images = [os.path.join(d, f) for f in os.listdir(d) if f.lower().endswith(IMAGE_FORMATS)]
     images = [img for img in images if img not in existing]
     sub_directories = [os.path.join(d, d) for d in os.listdir(d) if os.path.isdir(os.path.join(d, d))]
@@ -44,7 +44,7 @@ def load_from_directory(location):
     with db_session() as session:
         for image_file in files:
             image = create_image(image_file)
-            if session.exec(select(Image).where(Image.location == image_file)).first():
+            if session.exec(select(ImageData).where(ImageData.location == image_file)).first():
                 log.debug("Image %s already exists in the database, skipping", image.location)
                 continue
             session.add(image)

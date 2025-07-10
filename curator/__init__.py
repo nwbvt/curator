@@ -1,2 +1,2 @@
-from curator.image import Image
+from curator.image import ImageData
 from curator.imageLocation import ImageLocation
