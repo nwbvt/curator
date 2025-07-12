@@ -13,6 +13,7 @@ class ImageData(SQLModel, table=True):
     location: str = Field(unique=True)
     hash: str = Field(index=True, max_length=31)
     format: str = Field(max_length=3)
+    description: str | None = None
     author: str | None = None
     camera: str | None = None
     orientation: int = Field(default=1),
@@ -29,14 +30,6 @@ class ImageMini(SQLModel):
     id: int
     location: str
     format: str
-
-class ImageDescription(SQLModel, table=True):
-    """Model representing an image description."""
-    __table_args__ = (PrimaryKeyConstraint('image_id', 'author', name='uq_image_author'),)
-    image_id: int = Field(foreign_key='image.id')
-    description: str = Field(max_length=255)
-    author: str | None = None
-
 
 def exifValue(vals: dict, tag: str, default=None) -> str | float | int | None:
     """Extracts the value from an EXIF tag."""
@@ -103,66 +96,6 @@ def get_image_data(image_id: int, session: Session) -> ImageData | None:
         Image | None: The requested image or None if not found.
     """
     return session.get(ImageData, image_id)
-
-def get_image_descriptions(image_id: int, session: Session) -> list[ImageDescription]:
-    """
-    Retrieves all descriptions for a specific image.
-    
-    Args:
-        image_id (int): The ID of the image.
-        session (Session): The database session.
-    
-    Returns:
-        list[ImageDescription]: A list of ImageDescription objects.
-    """
-    return session.exec(select(ImageDescription).where(ImageDescription.image_id == image_id)).all()
-
-def get_image_description(image_id: int, author: str | None, session: Session) -> ImageDescription | None:
-    """
-    Retrieves a specific description for an image by author.
-    
-    Args:
-        image_id (int): The ID of the image.
-        author (str | None): The author of the description.
-        session (Session): The database session.
-    
-    Returns:
-        ImageDescription | None: The requested ImageDescription or None if not found.
-    """
-    return session.exec(
-        select(ImageDescription).where(
-            ImageDescription.image_id == image_id,
-            ImageDescription.author == author
-        )
-    ).first()
-
-def add_image_description(image_id: int, description: str,
-                          author: str | None, session: Session):
-    """
-    Adds a description to an image.
-    
-    Args:
-        image_id (int): The ID of the image.
-        description (str): The description text.
-        author (str | None): The author of the description.
-        session (Session): The database session.
-    
-    Returns:
-        ImageDescription: The created ImageDescription object.
-    """
-    image_desc = session.exec(
-        select(ImageDescription).where(
-            ImageDescription.image_id == image_id,
-            ImageDescription.author == author
-        )
-    ).first()
-    if image_desc:
-        image_desc.description = description
-    else:
-        image_desc = ImageDescription(image_id=image_id, description=description, author=author)
-    session.add(image_desc)
-    session.commit()
-    return image_desc
 
 def get_jpeg(image_id: int, session: Session) -> bytes | None:
     """

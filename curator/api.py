@@ -101,46 +101,6 @@ async def get_image(image_id: int, session: SessionDep) -> image.ImageData:
         raise HTTPException(status_code=404, detail=f"Image with ID {image_id} not found.")
     return img
 
-@app.get("/images/{image_id}/descriptions")
-async def get_image_descriptions(image_id: int, session: SessionDep) -> list[image.ImageDescription]:
-    """
-    Retrieves all descriptions for a specific image.
-    
-    Args:
-        image_id (int): The ID of the image.
-    
-    Returns:
-        list: A list of descriptions for the image.
-    """
-    descriptions = image.get_image_descriptions(image_id, session)
-    return descriptions
-
-@app.get("/images/{image_id}/descriptions/{author}")
-async def get_image_description(image_id: int, author: str,
-                                session: SessionDep) -> image.ImageDescription:
-    """Retrieves a specific description for an image by author.
-    Args:
-        image_id (int): The ID of the image.
-        author (str): The author of the description.
-    Returns:
-        ImageDescription: The requested ImageDescription or None if not found.
-    """
-    description = image.get_image_description(image_id, author, session)
-    if not description:
-        raise HTTPException(status_code=404, detail=f"Description for image {image_id} by author '{author}' not found.")
-    return description
-
-@app.put("/images/{image_id}/descriptions/user", status_code=201)
-async def set_image_description(session: SessionDep, image_id: int,
-                                description: str = Body(embed=True)) -> image.ImageDescription:
-    """
-    Adds a description to an image.
-    Args:
-        image_id (int): The ID of the image.
-        description (str): The description text.
-    """
-    return image.add_image_description(image_id, description, "user", session)
-
 class JPEGResponse(Response):
     """
     Custom response class for jpegs.
