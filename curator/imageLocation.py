@@ -13,7 +13,7 @@ class ImageLocation(SQLModel, table=True):
     directory: str = Field(unique=True)
 
 
-def image_files(d: str, existing: set[str] | None=None) -> list[str]:
+def image_files(dir: str, existing: set[str] | None=None) -> list[str]:
     """
     Gets all image files in a directory and its subdirectories.
 
@@ -23,14 +23,14 @@ def image_files(d: str, existing: set[str] | None=None) -> list[str]:
     Returns:
         list: A list of image file paths.
     """
-    if not os.path.exists(d):
-        raise ValueError(f"The directory {d} does not exist.")
+    if not os.path.exists(dir):
+        raise ValueError(f"The directory {dir} does not exist.")
     if existing is None:
         with db_session() as session:
-            existing = set(session.exec(select(ImageData.location).where(col(ImageData.location).startswith(d))).all())
-    images = [os.path.join(d, f) for f in os.listdir(d) if f.lower().endswith(IMAGE_FORMATS)]
+            existing = set(session.exec(select(ImageData.location).where(col(ImageData.location).startswith(dir))).all())
+    images = [os.path.join(dir, f) for f in os.listdir(dir) if f.lower().endswith(IMAGE_FORMATS)]
     images = [img for img in images if img not in existing]
-    sub_directories = [os.path.join(d, d) for d in os.listdir(d) if os.path.isdir(os.path.join(d, d))]
+    sub_directories = [os.path.join(dir, sub_dir) for sub_dir in os.listdir(dir) if os.path.isdir(os.path.join(dir, sub_dir))]
     for sub_dir in sub_directories:
         images.extend(image_files(sub_dir, existing))
     return images
