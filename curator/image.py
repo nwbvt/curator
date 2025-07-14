@@ -111,6 +111,15 @@ def get_jpeg(image_id: int, session: Session) -> bytes | None:
     image = session.get(ImageData, image_id)
     if not image:
         return None
+    return read_image(image)
+
+def read_image(image: ImageData) -> bytes:
+    """ Reads the image file and returns its content as bytes.
+    Args:
+        image (ImageData): The ImageData object representing the image.
+    Returns:
+        bytes: The content of the image file.
+    """
     if image.format.lower() == 'nef':
         return process_nef(image)
     with open(image.location, 'rb') as f:

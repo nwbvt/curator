@@ -17,4 +17,7 @@ class Settings(BaseSettings):
     # Logging settings
     log_level: str = 'INFO'
 
+    # Ollama settings
+    description_model: str = 'gemma3b:e4b'
+
 settings = Settings()
