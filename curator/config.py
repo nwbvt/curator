@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     log_level: str = 'INFO'
 
     # Ollama settings
-    description_model: str = 'gemma3b:e4b'
+    description_model: str = 'gemma3:4b'
+
+    # Scheduler settings
+    scheduler_interval: int = 3600  # Default to 1 hour
 
 settings = Settings()

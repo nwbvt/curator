@@ -4,7 +4,7 @@ import logging as log
 
 from curator import db, image, config
 
-def describe_image(image: image.ImageData) -> str:
+def describe_image(img: image.ImageData) -> str:
     """
     Uses Ollama to describe an image.
 
@@ -14,7 +14,7 @@ def describe_image(image: image.ImageData) -> str:
     Returns:
         str: The description of the image.
     """
-    img = image.read_image(image)
+    img_data = img.read_image()
     model = config.settings.description_model
     prompt = """"
     You are an expert image describer. Your task is to provide a detailed description of the image.
@@ -24,7 +24,7 @@ def describe_image(image: image.ImageData) -> str:
         response = ollama.generate(
             model=model,
             prompt=prompt,
-            images=[img],
+            images=[img_data],
         )
         return response.response
     except Exception as e:
@@ -38,6 +38,7 @@ def run_describer():
         images = session.exec(
             select(image.ImageData).where(image.ImageData.description.is_(None))
         ).all()
+        log.info(f"Found {len(images)} images without description.")
         for img in images:
             description = describe_image(img)
             img.description = description

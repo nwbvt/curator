@@ -25,6 +25,37 @@ class ImageData(SQLModel, table=True):
     iso: int | None = None
     focal_length: float | None = None
 
+    def read_image(self) -> bytes:
+        """ Reads the image file and returns its content as bytes.
+        Args:
+            image (ImageData): The ImageData object representing the image.
+        Returns:
+            bytes: The content of the image file.
+        """
+        if self.format.lower() == 'nef':
+            return self.process_nef()
+        with open(self.location, 'rb') as f:
+            return f.read()
+
+    def process_nef(self) -> bytes:
+        """
+        Processes a NEF image file.
+        
+        Args:
+            image (ImageData): The ImageData object representing the NEF image.
+        
+        Returns:
+            Image: The processed image as a bytearray.
+        """
+        # Placeholder for NEF processing logic
+        raw = rawpy.imread(self.location)
+        rgb=raw.postprocess(use_camera_wb=True)
+        im = Image.fromarray(rgb)
+        bytes = BytesIO()
+        im.save(bytes, format='JPEG')
+        return bytes.getvalue()
+
+
 class ImageMini(SQLModel):
     """Model representing a minimal image representation for API responses."""
     id: int
@@ -111,34 +142,4 @@ def get_jpeg(image_id: int, session: Session) -> bytes | None:
     image = session.get(ImageData, image_id)
     if not image:
         return None
-    return read_image(image)
-
-def read_image(image: ImageData) -> bytes:
-    """ Reads the image file and returns its content as bytes.
-    Args:
-        image (ImageData): The ImageData object representing the image.
-    Returns:
-        bytes: The content of the image file.
-    """
-    if image.format.lower() == 'nef':
-        return process_nef(image)
-    with open(image.location, 'rb') as f:
-        return f.read()
-
-def process_nef(image: ImageData) -> bytes:
-    """
-    Processes a NEF image file.
-    
-    Args:
-        image (ImageData): The ImageData object representing the NEF image.
-    
-    Returns:
-        Image: The processed image as a bytearray.
-    """
-    # Placeholder for NEF processing logic
-    raw = rawpy.imread(image.location)
-    rgb=raw.postprocess(use_camera_wb=True)
-    im = Image.fromarray(rgb)
-    bytes = BytesIO()
-    im.save(bytes, format='JPEG')
-    return bytes.getvalue()
+    return image.read_image(image)

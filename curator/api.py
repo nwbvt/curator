@@ -2,7 +2,7 @@ import logging as log
 from typing import Annotated
 from fastapi import BackgroundTasks, Body, Depends, FastAPI, HTTPException, Response
 from sqlmodel import Session
-from curator import image, imageLocation
+from curator import image, imageLocation, scheduler
 from curator.db import create_db_and_tables, db_session
 
 SessionDep = Annotated[Session, Depends(db_session)]
@@ -14,8 +14,9 @@ def on_startup():
     """
     Startup event handler to create the database and tables.
     """
-    create_db_and_tables()
     log.basicConfig(level=log.INFO)
+    create_db_and_tables()
+    scheduler.start_scheduler()
 
 @app.get("/locations")
 async def get_locations(session: SessionDep) -> list[imageLocation.ImageLocation]:
