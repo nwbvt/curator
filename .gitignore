@@ -195,3 +195,5 @@ cython_debug/
 
 Untitled.ipynb
 *.db
+
+*.chroma

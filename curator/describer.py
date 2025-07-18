@@ -34,6 +34,7 @@ def run_describer():
     """
     Runs the image describer on all images without a discription.
     """
+    chroma_coll = db.chroma_collection()
     with db.db_session() as session:
         images = session.exec(
             select(image.ImageData).where(image.ImageData.description.is_(None))
@@ -43,5 +44,10 @@ def run_describer():
             description = describe_image(img)
             img.description = description
             session.add(img)
+            chroma_coll.add(
+                documents=[img.description],
+                metadatas=[{"id": img.id}],
+                ids=[str(img.id)],
+            )
         session.commit()
         log.info(f"Described {len(images)} images.")

@@ -10,13 +10,14 @@ SessionDep = Annotated[Session, Depends(db_session)]
 app = FastAPI()
 
 @app.on_event("startup")
-def on_startup():
+async def on_startup():
     """
     Startup event handler to create the database and tables.
     """
     log.basicConfig(level=log.INFO)
     create_db_and_tables()
     scheduler.start_scheduler()
+    log.info("Curator application started")
 
 @app.get("/locations")
 async def get_locations(session: SessionDep) -> list[imageLocation.ImageLocation]:

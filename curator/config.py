@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     # Database settings
     db_url: str = 'sqlite:///./curator.db'
     db_echo: bool = False
+    chroma_path: str = './curator.chroma'
 
     # Logging settings
     log_level: str = 'INFO'
