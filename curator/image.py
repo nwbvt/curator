@@ -6,6 +6,8 @@ import rawpy
 from sqlmodel import Field, PrimaryKeyConstraint, SQLModel, Session, select
 from PIL import Image
 
+from curator import db
+
 class ImageData(SQLModel, table=True):
     __tablename__ = 'image'
     """Model representing an image."""
@@ -143,3 +145,27 @@ def get_jpeg(image_id: int, session: Session) -> bytes | None:
     if not image:
         return None
     return image.read_image(image)
+
+def search_images(query: str, session: Session, num_results: int=10) -> list[ImageData]:
+    """
+    Searches for images based on a query string.
+    
+    Args:
+        query (str): The search query.
+        session (Session): The database session.
+        num_results (int): The maximum number of results to return.
+    
+    Returns:
+        list[Image]: A list of images matching the search query.
+    """
+    chroma_coll = db.chroma_collection()
+    matches = chroma_coll.query(
+        query_texts=[query],
+        include=[],
+        n_results=num_results,
+    )
+    image_ids = [int(id) for id in matches['ids'][0]]
+    images = session.exec(
+        select(ImageData).where(ImageData.id.in_(image_ids))
+    ).all()
+    return images

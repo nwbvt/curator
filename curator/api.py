@@ -130,3 +130,18 @@ async def get_jpeg(image_id: int, session: SessionDep) -> Response:
     log.info("Returning image %d bytes", len(img))
     resp = Response(content=img, media_type="image/jpeg")
     return resp
+
+@app.post("/images/search", response_model=list[image.ImageData])
+async def search_images(query: str, session: SessionDep, num_results: int=10) -> list[image.ImageData]:
+    """
+    Searches for images based on a query string.
+    
+    Args:
+        query (str): The search query.
+        num_results (int): The maximum number of results to return.
+    
+    Returns:
+        list: A list of images matching the search query.
+    """
+    images = image.search_images(query, session, num_results)
+    return images
