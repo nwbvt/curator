@@ -7,10 +7,11 @@ from curator.describer import run_describer
 from curator.imageLocation import load_images
 
 def task():
-    log.info("Running scheduled task")
-    load_images()
-    run_describer()
-    time.sleep(config.settings.scheduler_interval)
+    while True:
+        log.info("Running scheduled task")
+        load_images()
+        run_describer()
+        time.sleep(config.settings.scheduler_interval)
 
 def start_scheduler():
     """
