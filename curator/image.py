@@ -144,7 +144,7 @@ def get_jpeg(image_id: int, session: Session) -> bytes | None:
     image = session.get(ImageData, image_id)
     if not image:
         return None
-    return image.read_image(image)
+    return image.read_image()
 
 def search_images(query: str, session: Session, num_results: int=10) -> list[ImageData]:
     """
