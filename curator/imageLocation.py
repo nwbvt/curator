@@ -41,14 +41,14 @@ def load_from_directory(location):
     files = image_files(location.directory)
     log.info("Found %d images in %s", len(files), location.directory)
     added=0
-    with db_session() as session:
-        for image_file in files:
-            image = create_image(image_file)
+    for image_file in files:
+        image = create_image(image_file)
+        with db_session() as session:
             if session.exec(select(ImageData).where(ImageData.location == image_file)).first():
                 log.debug("Image %s already exists in the database, skipping", image.location)
                 continue
             session.add(image)
-            added+=1
+        added+=1
         session.commit()
     log.info("Added %d images to the database from %s", added, location.directory)
 
