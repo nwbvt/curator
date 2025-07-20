@@ -131,7 +131,7 @@ async def get_jpeg(image_id: int, session: SessionDep) -> Response:
     resp = Response(content=img, media_type="image/jpeg")
     return resp
 
-@app.post("/images/search", response_model=list[image.ImageData])
+@app.post("/images/search", response_model=list[image.ImageMini])
 async def search_images(query: str, session: SessionDep, num_results: int=10) -> list[image.ImageData]:
     """
     Searches for images based on a query string.

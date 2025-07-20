@@ -2,8 +2,9 @@ import hashlib
 from io import BytesIO
 import os
 import exifread
+from pydantic import BaseModel, computed_field
 import rawpy
-from sqlmodel import Field, PrimaryKeyConstraint, SQLModel, Session, select
+from sqlmodel import Field, SQLModel, Session, select
 from PIL import Image
 
 from curator import db
@@ -58,11 +59,31 @@ class ImageData(SQLModel, table=True):
         return bytes.getvalue()
 
 
-class ImageMini(SQLModel):
+class ImageMini(BaseModel):
     """Model representing a minimal image representation for API responses."""
     id: int
-    location: str
-    format: str
+
+    @computed_field
+    @property
+    def url(self) -> str:
+        """
+        Returns the URL to access the image.
+        
+        Returns:
+            str: The URL to access the image.
+        """
+        return f"/images/{self.id}"
+
+    @computed_field
+    @property
+    def jpeg_url(self) -> str:
+        """
+        Returns the URL to access the JPEG version of the image.
+        
+        Returns:
+            str: The URL to access the JPEG version of the image.
+        """
+        return f"/images/{self.id}/jpeg"
 
 def exifValue(vals: dict, tag: str, default=None) -> str | float | int | None:
     """Extracts the value from an EXIF tag."""
