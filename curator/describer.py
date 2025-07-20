@@ -39,15 +39,10 @@ def run_describer():
         images = session.exec(
             select(image.ImageData).where(image.ImageData.description.is_(None))
         ).all()
-        log.info(f"Found {len(images)} images without description.")
-        for img in images:
-            description = describe_image(img)
-            img.description = description
-            session.add(img)
-            chroma_coll.add(
-                documents=[img.description],
-                metadatas=[{"id": img.id}],
-                ids=[str(img.id)],
-            )
-        session.commit()
-        log.info(f"Described {len(images)} images.")
+    log.info(f"Found {len(images)} images without description.")
+    for img in images:
+        description = describe_image(img)
+        img.description = description
+        with db.db_session() as session:
+            image.set_image(img, session)
+    log.info(f"Described {len(images)} images.")

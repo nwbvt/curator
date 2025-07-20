@@ -190,3 +190,25 @@ def search_images(query: str, session: Session, num_results: int=10) -> list[Ima
         select(ImageData).where(ImageData.id.in_(image_ids))
     ).all()
     return images
+
+METADATA_FIELDS = [
+    'author', 'camera', 'date_taken', 'exposure_time', 'f_number', 'iso', 'focal_length'
+]
+
+def set_image(image: ImageData, session: Session) -> None:
+    """
+    Adds or updates an image in the database.
+    
+    Args:
+        image (ImageData): The ImageData object to add or update.
+        session (Session): The database session.
+    """
+    session.add(image)
+    session.commit()
+    chroma_coll = db.chroma_collection()
+    image_model = image.model_dump()
+    chroma_coll.add(
+                documents=[image.description],
+                metadatas=[{prop: image_model[prop] for prop in image_model if prop in METADATA_FIELDS}],
+                ids=[str(image.id)],
+            )
