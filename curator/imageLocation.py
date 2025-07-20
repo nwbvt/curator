@@ -48,8 +48,8 @@ def load_from_directory(location):
                 log.debug("Image %s already exists in the database, skipping", image.location)
                 continue
             session.add(image)
+            session.commit()
         added+=1
-        session.commit()
     log.info("Added %d images to the database from %s", added, location.directory)
 
 
