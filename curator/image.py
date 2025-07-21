@@ -204,11 +204,12 @@ def set_image(image: ImageData, session: Session) -> None:
         session (Session): The database session.
     """
     session.add(image)
+    image_model = image.model_dump()
     session.commit()
     chroma_coll = db.chroma_collection()
-    image_model = image.model_dump()
+    metadata = {prop: image_model[prop] for prop in image_model if prop in METADATA_FIELDS}
     chroma_coll.add(
                 documents=[image.description],
-                metadatas=[{prop: image_model[prop] for prop in image_model if prop in METADATA_FIELDS}],
+                metadatas=[metadata],
                 ids=[str(image.id)],
             )
