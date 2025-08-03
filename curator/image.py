@@ -33,7 +33,7 @@ class ImageData(SQLModel, table=True):
         Args:
             image (ImageData): The ImageData object representing the image.
         Returns:
-            bytes: The content of the image file.
+            bytes: The content of the image file in jpeg format.
         """
         if self.format.lower() == 'nef':
             return self.process_nef()

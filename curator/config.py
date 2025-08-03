@@ -6,8 +6,7 @@ class Settings(BaseSettings):
     """
     model_config = SettingsConfigDict(
         env_file='.env',
-        env_file_encoding='utf-8',
-        extra='ignore'
+        env_file_encoding='utf-8'
     )
 
     # Database settings
@@ -18,8 +17,10 @@ class Settings(BaseSettings):
     # Logging settings
     log_level: str = 'INFO'
 
-    # Ollama settings
+    # LLM settings
     description_model: str = 'gemma3:4b'
+    use_ollama: bool = True
+    device: str = 'cuda'  # Default to GPU if available
 
     # Scheduler settings
     scheduler_interval: int = 3600  # Default to 1 hour
