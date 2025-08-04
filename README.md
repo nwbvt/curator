@@ -1,4 +1,5 @@
 # Curator
+Using local LLMs to describe a lookup photographs
 
 ## Installation
 1. Install [Ollama](https://ollama.com/download)
